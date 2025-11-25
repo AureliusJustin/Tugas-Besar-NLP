@@ -8,6 +8,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Auto
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from translation.translation import Translation
 
 VALID_ASPECTS = [
     'place', 'spot', 'view', 'price', 'quietness', 'food', 'drink', 'maintenance',
@@ -297,11 +298,10 @@ class ABSA:
 
 # Model constants
 LIST_MODEL_TRANSLATE = [
-    'helsinki_baseline',
-    'helsinki_finetuned',
-    'nllb_baseline',
-    'nllb_finetuned',
-    'best'
+    'helsinki',
+    'nllb',
+    'mbart',
+    'lstm'
 ]
 
 LIST_MODEL_ABSA = [
@@ -471,31 +471,102 @@ class IndoTripSight:
         self.reviews = []
         self.translated_text = None
         self.absa_processor = ABSA()
+        self.translator = Translation()
+        self.translation_models_loaded = {}
+        
+    def load_translation_models(self, models_to_load=None):
+        """Load specified translation models or all available models."""
+        if models_to_load is None:
+            models_to_load = ['helsinki', 'nllb', 'mbart', 'lstm']
+            
+        print("Loading translation models...")
+        
+        if 'helsinki' in models_to_load:
+            try:
+                self.translator.load_helsinki_model("/content/drive/MyDrive/Model/fine_tuned_helsinki_tourism2")
+                self.translation_models_loaded['helsinki'] = True
+                print("✓ Helsinki model loaded")
+            except Exception as e:
+                print(f"✗ Helsinki model failed: {e}")
+                self.translation_models_loaded['helsinki'] = False
+                
+        if 'nllb' in models_to_load:
+            try:
+                self.translator.load_nllb_model("/content/drive/MyDrive/Model/fine_tuned_nllb_tourism_essential2")
+                self.translation_models_loaded['nllb'] = True
+                print("✓ NLLB model loaded")
+            except Exception as e:
+                print(f"✗ NLLB model failed: {e}")
+                self.translation_models_loaded['nllb'] = False
+                
+        if 'mbart' in models_to_load:
+            try:
+                self.translator.load_mbart_model("/content/drive/MyDrive/Model/mbart_fine_tuned_essential2")
+                self.translation_models_loaded['mbart'] = True
+                print("✓ mBART model loaded")
+            except Exception as e:
+                print(f"✗ mBART model failed: {e}")
+                self.translation_models_loaded['mbart'] = False
+                
+        if 'lstm' in models_to_load:
+            try:
+                self.translator.load_lstm_model("/content/drive/MyDrive/Model/LSTM2.pt")
+                self.translation_models_loaded['lstm'] = True
+                print("✓ LSTM model loaded")
+            except Exception as e:
+                print(f"✗ LSTM model failed: {e}")
+                self.translation_models_loaded['lstm'] = False
+                
+        print(f"Translation models loaded: {list(k for k, v in self.translation_models_loaded.items() if v)}")
 
     def add_review(self, review):
         self.reviews.append(review)
 
-    def translate_review(self, model='best'):
+    def translate_review(self, model='nllb'):
         if not self.reviews:
             return "No reviews to translate"
         review_text = self.reviews[-1]
 
-        # Store the raw "translated" text (currently just the input)
-        self.translated_text = review_text
+        try:
+            translator_type = model
+            
+            # Check if model is loaded
+            if translator_type not in self.translation_models_loaded or not self.translation_models_loaded[translator_type]:
+                self.translated_text = review_text
+                return f"[{model.upper()}] Model not loaded. Using original text: {review_text}"
+            
+            # Perform actual translation
+            if translator_type == 'lstm':
+                translated = self.translator.translate_text(review_text, 'lstm')
+            elif translator_type == 'helsinki':
+                translated = self.translator.translate_text(review_text, 'helsinki')
+            elif translator_type == 'nllb':
+                translated = self.translator.translate_text(review_text, 'nllb', 
+                                                          src_lang="ind_Latn", tgt_lang="eng_Latn")
+            elif translator_type == 'mbart':
+                translated = self.translator.translate_text(review_text, 'mbart',
+                                                          src_lang="id_ID", tgt_lang="en_XX")
+            else:
+                translated = review_text
+            
+            # Store translated text for ABSA
+            self.translated_text = translated if translated else review_text
+            
+            return f"[{model.upper()}] Translated: {self.translated_text}"
+            
+        except Exception as e:
+            self.translated_text = review_text
+            return f"[{model.upper()}] Translation failed: {str(e)}. Using original: {review_text}"
 
-        if model == 'helsinki_baseline':
-            result = f"[Helsinki Baseline] Translated: {review_text}"
-        elif model == 'helsinki_finetuned':
-            result = f"[Helsinki Fine-tuned] Translated: {review_text}"
-        elif model == 'nllb_baseline':
-            result = f"[NLLB Baseline] Translated: {review_text}"
-        elif model == 'nllb_finetuned':
-            result = f"[NLLB Fine-tuned] Translated: {review_text}"
-        else:  # best or default
-            result = f"[Best Model] Translated: {review_text}"
-
-        return result
-
+    def get_translation_model_status(self):
+        """Get status of loaded translation models."""
+        return {
+            'loaded_models': [k for k, v in self.translation_models_loaded.items() if v],
+            'failed_models': [k for k, v in self.translation_models_loaded.items() if not v],
+            'total_loaded': sum(self.translation_models_loaded.values()),
+            'available_models': self.translator.get_available_models() if hasattr(self.translator, 'get_available_models') else []
+        }
+    
     def absa(self, model='best'):
         if self.translated_text is None:
              self.translate_review()
@@ -525,6 +596,22 @@ if __name__ == "__main__":
     time.sleep(0.5)
     
     indo_trip_sight = IndoTripSight()
+    
+    # Initialize translation models
+    print("\n" + "═" * 60)
+    animate_typing("Initializing Translation Models...")
+    print("═" * 60)
+    
+    models_to_load = ['nllb', 'helsinki', 'mbart', 'lstm']
+    indo_trip_sight.load_translation_models(models_to_load)
+    
+    # Show model status
+    status = indo_trip_sight.get_translation_model_status()
+    print(f"\n\u2713 Translation models ready: {len(status['loaded_models'])}/{len(models_to_load)}")
+    if status['loaded_models']:
+        print(f"   Loaded: {', '.join(status['loaded_models'])}")
+    if status['failed_models']:
+        print(f"   Failed: {', '.join(status['failed_models'])}")
 
     print("\n" + "═" * 60)
     animate_typing("IndoTripSight NLP Pipeline System Ready")
@@ -579,6 +666,14 @@ if __name__ == "__main__":
     print(f"   ABSA: {absa_model}")
     print(f"   Summarization: {summarization_model}")
     print("═" * 60)
+    
+    # Show selected model info
+    selected_translator_model = translate_model
+    
+    if selected_translator_model in status['loaded_models']:
+        print(f"\n\u2713 Using loaded {selected_translator_model.upper()} model for translation")
+    else:
+        print(f"\n\u26A0 {selected_translator_model.upper()} model not loaded, will use fallback")
 
     # Process translation with progress bar
     print("\n")
