@@ -9,6 +9,7 @@ from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from translation.translation import Translation
+from summarization.summarization import Summarization
 
 VALID_ASPECTS = [
     'place', 'spot', 'view', 'price', 'quietness', 'food', 'drink', 'maintenance',
@@ -314,7 +315,14 @@ LIST_MODEL_ABSA = [
 ]
 
 LIST_MODEL_SUMMARIZATION = [
-    'gemini_pro',
+    'first_sentence',
+    'textrank',
+    'bart_zero_shot',
+    'bart_full',
+    'bart_sampled',
+    'pegasus_zero_shot',
+    'pegasus_full',
+    'pegasus_sampled',
     'best'
 ]
 
@@ -472,6 +480,7 @@ class IndoTripSight:
         self.translated_text = None
         self.absa_processor = ABSA()
         self.translator = Translation()
+        self.summarizer = Summarization()
         self.translation_models_loaded = {}
         
     def load_translation_models(self, models_to_load=None):
@@ -579,12 +588,27 @@ class IndoTripSight:
         return absa_result
 
     def summarization(self, model='best'):
-        translated_review = self.translate_review(model)
-
-        if model == 'gemini_pro':
-            return f"[Gemini Pro] Summarized: {translated_review}"
-        else:  # best or default
-            return f"[Best Summarization Model] Summarized: {translated_review}"
+        """Generate summary of the translated review using specified model.
+        
+        Args:
+            model (str): Summarization method to use
+            
+        Returns:
+            str: Generated summary
+        """
+        # Use the already translated text if available, otherwise translate first
+        if self.translated_text is None:
+            self.translate_review('nllb')  # Use default translation model
+        
+        translated_review = self.translated_text
+        
+        # Generate summary using the Summarization module
+        try:
+            summary = self.summarizer.summarize(translated_review, method=model)
+            return summary
+        except Exception as e:
+            print(f"Error in summarization: {e}")
+            return f"Error generating summary: {str(e)}"
 
 if __name__ == "__main__":
     clear_screen()
