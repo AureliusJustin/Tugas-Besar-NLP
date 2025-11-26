@@ -1,0 +1,27 @@
+Relevancy
+5,Sempurna. Mencakup semua poin Aksesibilitas/Fasilitas/Aktivitas yang ada di teks. Tidak ada info sampah (misal: curhat penulis).
+4,Bagus. Mencakup poin utama, tapi ada sedikit info yang tidak diminta.
+3,Cukup. Ada poin penting (Akses/Fasilitas/Aktivitas) yang terlewat, atau terlalu banyak info tidak relevan.
+2,Buruk. Fokus melenceng (misal: malah menceritakan sejarah tempat).
+1,Gagal. Tidak mengikuti instruksi sama sekali.
+
+Consistency
+5,Akurat. 100% didukung teks asli. Tidak ada halusinasi.
+4,Hampir Akurat. Fakta benar, hanya sedikit perbedaan kata/ambiguitas.
+3,Sedikit Halusinasi. Ada info tambahan kecil yang tidak mengubah makna (misal: menyimpulkan "parkir luas" padahal teks hanya bilang "ada parkir").
+2,Halusinasi. Mengarang fasilitas/aktivitas yang tidak pernah disebutkan.
+1,Kontradiksi. Bertentangan dengan teks asli (misal: Teks bilang "tidak ada toilet", ringkasan bilang "toilet bersih").
+
+Conciseness
+5,Sangat Ringkas. Menggabungkan beberapa ide menjadi kalimat padat. Efisien.
+4,Cukup Ringkas. Bagus, tapi ada 1-2 kata yang mubazir.
+3,Sedang/Ekstraktif. Terasa seperti copy-paste kalimat asli. Kurang dipersingkat.
+2,Bertele-tele. Banyak pengulangan informasi.
+1,Redundan. Lebih panjang atau sama panjangnya dengan teks asli.
+
+Fluency
+5,Alami. Tata bahasa sempurna, seperti tulisan manusia.
+4,Lancar. Benar secara gramatikal, tapi terasa sedikit kaku/robotik.
+3,Dapat Dimengerti. Makna tersampaikan, tapi ada typo atau struktur kalimat aneh.
+2,Sulit Dibaca. Banyak kesalahan struktur kalimat (SPOK berantakan).
+1,Tidak Jelas. Kalimat tidak masuk akal.
