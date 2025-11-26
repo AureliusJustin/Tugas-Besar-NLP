@@ -69,6 +69,16 @@ def test_summarization_module():
             print(f"Error: {e}")
     else:
         print("\n[3] BART Sampled model not found. Skipping.")
+        
+    if available['bart']['full']:
+        print("\n[4] BART Full (Fine-tuned):")
+        try:
+            summary = summarizer.summarize(test_text, method='bart_full')
+            print(f"Summary: {summary}")
+        except Exception as e:
+            print(f"Error: {e}")
+    else:
+        print("\n[4] BART Full model not found. Skipping.")
     
     print("\n[4] Best Model (default):")
     try:
